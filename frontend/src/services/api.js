@@ -26,3 +26,6 @@ export const createReview = (review) =>
 export const updateReview = (id, review) =>
   request(`/${id}`, { method: 'PUT', body: JSON.stringify(review) });
 export const deleteReview = (id) => request(`/${id}`, { method: 'DELETE' });
+// Undo: re-creates a deleted review with its original id and date-time.
+export const restoreReview = (review) =>
+  request('/restore', { method: 'POST', body: JSON.stringify(review) });
