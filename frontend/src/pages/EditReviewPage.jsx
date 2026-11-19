@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import ReviewForm from '../components/ReviewForm';
-import { getReview, updateReview, deleteReview } from '../services/api';
+import { useReviews } from '../hooks/useReviews';
+import { getReview, updateReview } from '../services/api';
 import socket from '../services/socket';
 
 export default function EditReviewPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { deleteWithUndo } = useReviews();
   const [review, setReview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -48,14 +50,10 @@ export default function EditReviewPage() {
     }
   };
 
+  // Deleting shows the snackbar with Undo (on the list page), so no confirm dialog.
   const handleDelete = async () => {
-    if (!window.confirm('Delete this review?')) return;
-    try {
-      await deleteReview(id);
-      navigate('/');
-    } catch (err) {
-      setError(err.message);
-    }
+    const deleted = await deleteWithUndo(review);
+    if (deleted) navigate('/');
   };
 
   if (loading) return <div className="page"><p>Loading...</p></div>;

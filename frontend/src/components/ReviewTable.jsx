@@ -4,7 +4,29 @@ function formatDateTime(value) {
   return new Date(value).toLocaleString();
 }
 
-export default function ReviewTable({ reviews, onDelete }) {
+function SortableHeader({ label, sortKey, activeKey, order, onSort }) {
+  const active = activeKey === sortKey;
+  const arrow = active ? (order === 'asc' ? '▲' : '▼') : '↕';
+  return (
+    <th aria-sort={active ? (order === 'asc' ? 'ascending' : 'descending') : 'none'}>
+      <button type="button" className="sort-button" onClick={() => onSort(sortKey)}>
+        {label} <span aria-hidden="true">{arrow}</span>
+      </button>
+    </th>
+  );
+}
+
+// highlights: { [id]: 'created' | 'updated' | 'deleted' } -> green / blue / red row.
+// Sorting is enabled when onSort is provided (Title and Date-time columns).
+export default function ReviewTable({
+  reviews,
+  highlights = {},
+  sortKey,
+  sortOrder,
+  onSort,
+  onDelete,
+  emptyMessage = 'No reviews yet. Create the first one!',
+}) {
   const navigate = useNavigate();
 
   return (
@@ -12,9 +34,17 @@ export default function ReviewTable({ reviews, onDelete }) {
       <thead>
         <tr>
           <th>#</th>
-          <th>Title</th>
+          {onSort ? (
+            <SortableHeader label="Title" sortKey="title" activeKey={sortKey} order={sortOrder} onSort={onSort} />
+          ) : (
+            <th>Title</th>
+          )}
           <th>Content</th>
-          <th>Date-time</th>
+          {onSort ? (
+            <SortableHeader label="Date-time" sortKey="dateTime" activeKey={sortKey} order={sortOrder} onSort={onSort} />
+          ) : (
+            <th>Date-time</th>
+          )}
           <th>Edit</th>
           <th>Delete</th>
         </tr>
@@ -23,32 +53,41 @@ export default function ReviewTable({ reviews, onDelete }) {
         {reviews.length === 0 ? (
           <tr>
             <td colSpan={6} className="empty">
-              No reviews yet. Create the first one!
+              {emptyMessage}
             </td>
           </tr>
         ) : (
-          reviews.map((review, index) => (
-            <tr key={review.id}>
-              <td>{index + 1}</td>
-              <td>{review.title}</td>
-              <td className="content-cell">{review.content}</td>
-              <td>{formatDateTime(review.dateTime)}</td>
-              <td>
-                <button type="button" onClick={() => navigate(`/${review.id}`)}>
-                  Edit
-                </button>
-              </td>
-              <td>
-                <button
-                  type="button"
-                  className="danger"
-                  onClick={() => onDelete(review.id)}
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))
+          reviews.map((review, index) => {
+            const highlight = highlights[review.id];
+            const isDeleted = highlight === 'deleted';
+            return (
+              <tr key={review.id} className={highlight ? `row-${highlight}` : undefined}>
+                <td>{index + 1}</td>
+                <td>{review.title}</td>
+                <td className="content-cell">{review.content}</td>
+                <td>{formatDateTime(review.dateTime)}</td>
+                <td>
+                  <button
+                    type="button"
+                    disabled={isDeleted}
+                    onClick={() => navigate(`/${review.id}`)}
+                  >
+                    Edit
+                  </button>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    className="danger"
+                    disabled={isDeleted}
+                    onClick={() => onDelete(review)}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            );
+          })
         )}
       </tbody>
     </table>
