@@ -10,6 +10,10 @@ function errorHandler(err, req, res, next) {
     const errors = Object.values(err.errors).map((e) => e.message);
     return res.status(400).json({ success: false, message: errors.join(', '), errors });
   }
+  // Duplicate _id, e.g. two simultaneous Undo requests for the same review.
+  if (err.code === 11000) {
+    return res.status(409).json({ success: false, message: 'Review already exists' });
+  }
   if (err.type === 'entity.parse.failed') {
     return res.status(400).json({ success: false, message: 'Invalid JSON body' });
   }
